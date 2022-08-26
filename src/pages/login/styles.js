@@ -80,6 +80,16 @@ export default makeStyles(theme => ({
     width: 30,
     marginRight: theme.spacing(2),
   },
+  facebookButton: {
+    boxShadow: theme.customShadows.widget,
+    backgroundColor: "white",
+    width: "100%",
+    textTransform: "none",
+  },
+  facebookIcon: {
+    width: 30,
+    marginRight: theme.spacing(2),
+  },
   creatingButtonContainer: {
     marginTop: theme.spacing(2.5),
     height: 46,

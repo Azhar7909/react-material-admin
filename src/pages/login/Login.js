@@ -17,6 +17,7 @@ import useStyles from "./styles";
 
 // logo
 import logo from "./logo.svg";
+import facebook from "../../images/facebook.svg";
 import google from "../../images/google.svg";
 
 // context
@@ -62,6 +63,15 @@ function Login(props) {
               <Button size="large" className={classes.googleButton}>
                 <img src={google} alt="google" className={classes.googleIcon} />
                 &nbsp;Sign in with Google
+              </Button>
+              <div className={classes.formDividerContainer}>
+                <div className={classes.formDivider} />
+                <Typography className={classes.formDividerWord}>or</Typography>
+                <div className={classes.formDivider} />
+              </div>
+              <Button size="large" className={classes.facebookButton} onClick={(e) => {e.preventDefault(); window.location.href='http://localhost:8000';}}>
+                <img src={facebook} alt="facebook" className={classes.facebookIcon} />
+                &nbsp;Sign in with Facebook
               </Button>
               <div className={classes.formDividerContainer}>
                 <div className={classes.formDivider} />
@@ -245,7 +255,7 @@ function Login(props) {
           )}
         </div>
         <Typography color="primary" className={classes.copyright}>
-        © 2014-{new Date().getFullYear()} <a style={{ textDecoration: 'none', color: 'inherit' }} href="https://flatlogic.com" rel="noopener noreferrer" target="_blank">Flatlogic</a>, LLC. All rights reserved.
+          © 2014-{new Date().getFullYear()} <a style={{ textDecoration: 'none', color: 'inherit' }} href="https://flatlogic.com" rel="noopener noreferrer" target="_blank">Flatlogic</a>, LLC. All rights reserved.
         </Typography>
       </div>
     </Grid>
