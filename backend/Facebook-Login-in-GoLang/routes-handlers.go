@@ -1,11 +1,14 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
 	"strings"
+	"time"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"golang.org/x/oauth2"
 )
 
@@ -16,7 +19,7 @@ func RenderHome(response http.ResponseWriter, request *http.Request) {
 
 // RenderProfile Rendering the ProfileHome Page
 func RenderProfile(response http.ResponseWriter, request *http.Request) {
-	http.Redirect(response, request, "http://localhost:3000/app/dashboard#/app/dashboard",http.StatusSeeOther)
+	http.Redirect(response, request, "http://localhost:3000/#/app/dashboard", http.StatusSeeOther)
 }
 
 // InitFacebookLogin function will initiate the Facebook Login
@@ -63,24 +66,46 @@ func HandleFacebookLogin(response http.ResponseWriter, request *http.Request) {
 
 // SignInUser Used for Signing In the Users
 func SignInUser(facebookUserDetails FacebookUserDetails) (string, error) {
-	// var result UserDetails
+	var result UserDetails
 
 	if facebookUserDetails == (FacebookUserDetails{}) {
-		return "", errors.New("user details Can't be empty")
+		return "", errors.New("User details Can't be empty")
 	}
 
 	if facebookUserDetails.Email == "" {
-		return "", errors.New("last Name can't be empty")
+		return "", errors.New("Last Name can't be empty")
 	}
 
 	if facebookUserDetails.Name == "" {
-		return "", errors.New("password can't be empty")
+		return "", errors.New("Password can't be empty")
+	}
+
+	collection := Client.Database("test").Collection("users")
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+
+	_ = collection.FindOne(ctx, bson.M{
+		"email": facebookUserDetails.Email,
+	}).Decode(&result)
+
+	defer cancel()
+
+	if result == (UserDetails{}) {
+		_, registrationError := collection.InsertOne(ctx, bson.M{
+			"email":    facebookUserDetails.Email,
+			"password": "",
+			"name":     facebookUserDetails.Name,
+		})
+		defer cancel()
+
+		if registrationError != nil {
+			return "", errors.New("Error occurred registration")
+		}
 	}
 
 	tokenString, _ := CreateJWT(facebookUserDetails.Email)
 
 	if tokenString == "" {
-		return "", errors.New("unable to generate Auth token")
+		return "", errors.New("Unable to generate Auth token")
 	}
 
 	return tokenString, nil
@@ -99,21 +124,32 @@ func GetUserDetails(response http.ResponseWriter, request *http.Request) {
 	if email == "" {
 		returnErrorResponse(response, request, errorResponse)
 	} else {
+		collection := Client.Database("test").Collection("users")
 
-		var successResponse = SuccessResponse{
-			Code:     http.StatusOK,
-			Message:  "You are logged in successfully",
-			Response: result.Name,
-		}
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		var err = collection.FindOne(ctx, bson.M{
+			"email": email,
+		}).Decode(&result)
 
-		successJSONResponse, jsonError := json.Marshal(successResponse)
+		defer cancel()
 
-		if jsonError != nil {
+		if err != nil {
 			returnErrorResponse(response, request, errorResponse)
-		}
-		response.Header().Set("Content-Type", "application/json")
-		response.Write(successJSONResponse)
+		} else {
+			var successResponse = SuccessResponse{
+				Code:     http.StatusOK,
+				Message:  "You are logged in successfully",
+				Response: result.Name,
+			}
 
+			successJSONResponse, jsonError := json.Marshal(successResponse)
+
+			if jsonError != nil {
+				returnErrorResponse(response, request, errorResponse)
+			}
+			response.Header().Set("Content-Type", "application/json")
+			response.Write(successJSONResponse)
+		}
 	}
 }
 
